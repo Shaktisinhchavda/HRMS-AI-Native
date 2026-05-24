@@ -86,7 +86,7 @@ export default function RecruitmentDashboard() {
             />
           </div>
           <div className="text-sm text-muted-foreground ml-auto hidden sm:block">
-            {filteredCandidates.length} candidates found
+            {filteredCandidates.length} {filteredCandidates.length === 1 ? "candidate" : "candidates"} found
           </div>
         </CardContent>
       </Card>
@@ -121,11 +121,12 @@ export default function RecruitmentDashboard() {
               candidate.match_score >= 60 ? "text-amber-500" : "text-destructive";
 
             return (
-              <Card key={candidate.id} className="glass-card card-hover overflow-hidden flex flex-col">
+              <Link key={candidate.id} href={`/dashboard/recruitment/${candidate.id}`} className="block">
+              <Card className="glass-card card-hover overflow-hidden flex flex-col cursor-pointer group">
                 <CardHeader className="pb-3 border-b bg-muted/10">
                   <div className="flex justify-between items-start gap-4">
                     <div>
-                      <CardTitle className="text-base font-semibold truncate" title={candidate.name}>
+                      <CardTitle className="text-base font-semibold truncate group-hover:text-primary transition-colors" title={candidate.name}>
                         {candidate.name}
                       </CardTitle>
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1.5">
@@ -182,6 +183,7 @@ export default function RecruitmentDashboard() {
                   </div>
                 </CardContent>
               </Card>
+              </Link>
             );
           })}
         </div>

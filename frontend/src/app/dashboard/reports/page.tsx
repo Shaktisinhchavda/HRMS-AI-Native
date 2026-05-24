@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Send, BarChart3, Database, Sparkles, Loader2, Code2, AlertCircle } from "lucide-react";
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 interface ReportResponse {
   sql: string;
@@ -56,6 +57,76 @@ export default function NaturalLanguageReportsPage() {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     handleQuery(question);
+  };
+
+  const renderChart = () => {
+    if (!result || result.rows.length < 2 || result.columns.length < 2) return null;
+
+    let labelIdx = 0;
+    let valueIdx = -1;
+
+    for (let i = 0; i < result.columns.length; i++) {
+      const isNumeric = result.rows.every(row => typeof row[i] === 'number' || (row[i] !== null && !isNaN(Number(row[i]))));
+      if (isNumeric) {
+        valueIdx = i;
+        if (i === 0) labelIdx = 1;
+        break;
+      }
+    }
+
+    if (valueIdx === -1 || labelIdx >= result.columns.length) return null;
+
+    const chartData = result.rows.map(row => ({
+      name: String(row[labelIdx]),
+      value: Number(row[valueIdx])
+    }));
+
+    const labelColName = result.columns[labelIdx].toLowerCase();
+    const isTimeSeries = labelColName.includes('date') || labelColName.includes('month') || labelColName.includes('year') || labelColName.includes('time');
+
+    return (
+      <Card className="glass-card shadow-sm overflow-hidden flex flex-col mt-6 animate-fade-in">
+        <CardHeader className="border-b bg-muted/10 py-4 flex flex-row items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-primary" />
+            Generated Chart
+          </CardTitle>
+          <Badge variant="secondary" className="font-normal">
+            {isTimeSeries ? "Trend Analysis" : "Distribution"}
+          </Badge>
+        </CardHeader>
+        <CardContent className="p-6 h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            {isTimeSeries ? (
+              <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
+                <XAxis dataKey="name" stroke="currentColor" strokeOpacity={0.5} fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="currentColor" strokeOpacity={0.5} fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
+                <RechartsTooltip 
+                  contentStyle={{ borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'hsl(var(--background))', color: 'hsl(var(--foreground))' }}
+                  itemStyle={{ color: '#10b981', fontWeight: 600 }}
+                  formatter={(value: any) => [value, result.columns[valueIdx].replace(/_/g, ' ')]}
+                />
+                <Line type="monotone" dataKey="value" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+              </LineChart>
+            ) : (
+              <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} vertical={false} />
+                <XAxis dataKey="name" stroke="currentColor" strokeOpacity={0.5} fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="currentColor" strokeOpacity={0.5} fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
+                <RechartsTooltip 
+                  cursor={{ fill: 'currentColor', opacity: 0.05 }}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'hsl(var(--background))', color: 'hsl(var(--foreground))' }}
+                  itemStyle={{ color: '#3b82f6', fontWeight: 600 }}
+                  formatter={(value: any) => [value, result.columns[valueIdx].replace(/_/g, ' ')]}
+                />
+                <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40} />
+              </BarChart>
+            )}
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
@@ -162,6 +233,9 @@ export default function NaturalLanguageReportsPage() {
                 )}
               </CardContent>
             </Card>
+            
+            {/* Dynamic Chart (if data is compatible) */}
+            {renderChart()}
           </div>
 
           {/* Sidebar Insights & SQL */}

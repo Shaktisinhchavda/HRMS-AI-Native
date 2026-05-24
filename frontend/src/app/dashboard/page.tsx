@@ -15,6 +15,9 @@ interface AdminData {
   predicted_attrition_rate: number;
   recent_activities: Array<{ title: string; subtitle: string }>;
   alert: string;
+  present_today: string[];
+  on_leave_today: string[];
+  on_pip: string[];
 }
 
 interface EmployeeData {
@@ -24,6 +27,7 @@ interface EmployeeData {
   weekly_hours: number;
   attendance_status: string;
   recent_activities: Array<{ title: string; subtitle: string }>;
+  colleagues_on_leave: string[];
   alert: string;
 }
 
@@ -98,6 +102,40 @@ function AdminOverview({ data }: { data: AdminData }) {
       {/* Main Content Area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         <div className="lg:col-span-2 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="glass-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold">On Leave</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-amber-500 mb-2">{data.on_leave_today.length}</div>
+                <div className="space-y-1">
+                  {data.on_leave_today.length === 0 && <div className="text-xs text-muted-foreground">No one on leave</div>}
+                  {data.on_leave_today.slice(0, 3).map((name, i) => (
+                    <div key={i} className="text-xs text-muted-foreground">{name}</div>
+                  ))}
+                  {data.on_leave_today.length > 3 && <div className="text-xs text-muted-foreground italic">+{data.on_leave_today.length - 3} more</div>}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="glass-card border-destructive/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-destructive">On PIP</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-destructive mb-2">{data.on_pip.length}</div>
+                <div className="space-y-1">
+                  {data.on_pip.length === 0 && <div className="text-xs text-muted-foreground">0 employees</div>}
+                  {data.on_pip.slice(0, 3).map((name, i) => (
+                    <div key={i} className="text-xs text-muted-foreground">{name}</div>
+                  ))}
+                  {data.on_pip.length > 3 && <div className="text-xs text-muted-foreground italic">+{data.on_pip.length - 3} more</div>}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           <Card className="glass-card">
             <CardHeader>
               <CardTitle>Recent Onboardings</CardTitle>
@@ -247,6 +285,38 @@ function EmployeeOverview({ data }: { data: EmployeeData }) {
         </div>
 
         <div className="space-y-6">
+          {/* Colleagues on Leave */}
+          <Card className="glass-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Users className="w-4 h-4 text-primary" />
+                Team Out of Office
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {data.colleagues_on_leave.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Everyone is present today.</p>
+              ) : (
+                <div className="space-y-3">
+                  {data.colleagues_on_leave.slice(0, 5).map((name, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                        <span className="text-xs font-medium">{name.charAt(0)}</span>
+                      </div>
+                      <span className="text-sm font-medium">{name}</span>
+                      <span className="text-xs text-muted-foreground ml-auto">On Leave</span>
+                    </div>
+                  ))}
+                  {data.colleagues_on_leave.length > 5 && (
+                    <p className="text-xs text-center text-muted-foreground pt-2">
+                      +{data.colleagues_on_leave.length - 5} more
+                    </p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Contact HR / Support Portal */}
           <Card className="glass-card">
             <CardHeader>

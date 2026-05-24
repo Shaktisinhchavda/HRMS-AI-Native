@@ -80,38 +80,6 @@ export default function EmployeesPage() {
         </div>
       </div>
 
-      {employeeOfTheMonth && (
-        <Card className="glass-card shadow-sm border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-background to-background relative overflow-hidden">
-          <div className="absolute -right-10 -top-10 opacity-10 pointer-events-none">
-            <Trophy className="w-48 h-48 text-amber-500" />
-          </div>
-          <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-6">
-            <div className="relative">
-              <Avatar className="h-20 w-20 border-2 border-amber-500/50 shadow-md">
-                <AvatarFallback className="bg-amber-500/10 text-amber-600 text-xl font-bold">
-                  {employeeOfTheMonth.full_name.split(" ").map(n => n[0]).join("")}
-                </AvatarFallback>
-              </Avatar>
-              <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-lg border-2 border-background">
-                <Star className="w-4 h-4 fill-white" />
-              </div>
-            </div>
-            <div className="text-center sm:text-left z-10">
-              <div className="flex items-center gap-2 justify-center sm:justify-start mb-1">
-                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 uppercase tracking-wider text-[10px] font-bold">
-                  Employee of the Month
-                </Badge>
-              </div>
-              <h2 className="text-xl font-bold text-foreground">{employeeOfTheMonth.full_name}</h2>
-              <p className="text-sm text-muted-foreground">{employeeOfTheMonth.designation} &middot; {employeeOfTheMonth.department}</p>
-              <p className="text-xs text-muted-foreground mt-2 italic max-w-lg">
-                "Recognized for outstanding contributions, exceptional teamwork, and consistently going above and beyond in delivering high-quality results."
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <Card className="glass-card shadow-sm border-primary/10 overflow-hidden flex flex-col">
         <CardHeader className="py-4 border-b bg-muted/20">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">

@@ -172,12 +172,22 @@ export default function AnalyticsDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Attrition Risk Chart */}
           <Card className="glass-card shadow-sm flex flex-col">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <TrendingDown className="w-4 h-4 text-primary" />
-                Company Attrition Risk
-              </CardTitle>
-              <CardDescription>Overall distribution of exit probability</CardDescription>
+            <CardHeader className="pb-2 flex flex-row justify-between items-start">
+              <div>
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <TrendingDown className="w-4 h-4 text-primary" />
+                  Company Attrition Risk
+                </CardTitle>
+                <CardDescription>Overall distribution of exit probability</CardDescription>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs h-7" 
+                onClick={() => document.getElementById('retention-alerts')?.scrollIntoView({behavior: 'smooth'})}
+              >
+                View Details
+              </Button>
             </CardHeader>
             <CardContent className="flex-1 flex items-center justify-center min-h-[250px]">
               <ResponsiveContainer width="100%" height={250}>
@@ -264,7 +274,7 @@ export default function AnalyticsDashboard() {
         </Card>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-          <Card className="glass-card shadow-sm border-destructive/20">
+          <Card id="retention-alerts" className="glass-card shadow-sm border-destructive/20 scroll-mt-6">
             <CardHeader className="pb-3 border-b bg-destructive/5">
               <CardTitle className="text-base font-semibold flex items-center gap-2 text-destructive">
                 <UserX className="w-4 h-4" />

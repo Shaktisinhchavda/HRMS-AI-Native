@@ -15,8 +15,9 @@ ONLY return the SQL query string. Do NOT include markdown formatting (like ```sq
 
 CRITICAL SQLITE RULES:
 1. SQLite DOES NOT have MONTH() or YEAR() functions. You MUST use strftime('%m', date_column) or strftime('%Y', date_column) instead.
-2. The `skills` column is a single comma-separated TEXT column. SQLite cannot easily UNNEST or split strings. Use `LIKE '%SkillName%'` to search for skills. Do NOT hallucinate a `skill` column.
-3. For comparisons, cast string dates if necessary, though SQLite usually handles them. 
+2. The `skills` column is a single comma-separated TEXT column. SQLite DOES NOT support UNNEST, split_string, or string-splitting functions. You MUST use `skills LIKE '%SkillName%'` to include or `skills NOT LIKE '%SkillName%'` to exclude skills.
+3. SQLite DOES NOT support the INTERVAL keyword (e.g., `INTERVAL '6' MONTH`). You MUST use SQLite's date modifier syntax, such as `date('now', '-6 months')`.
+4. For comparisons, cast string dates if necessary, though SQLite usually handles them. 
 
 Schema:
 
@@ -45,10 +46,27 @@ Table: payroll
 - employee_id (INTEGER, foreign key to employees.id)
 - month (INTEGER - 1 to 12)
 - year (INTEGER)
-- basic_salary (FLOAT)
+- base_salary (FLOAT)
 - overtime_pay (FLOAT)
 - deductions (FLOAT)
+- bonus (FLOAT)
 - net_pay (FLOAT)
+- status (VARCHAR - 'paid', 'pending')
+
+Table: leaves
+- id (INTEGER, primary key)
+- employee_id (INTEGER, foreign key to employees.id)
+- start_date (DATE)
+- end_date (DATE)
+- days (INTEGER)
+- status (VARCHAR - 'pending', 'approved', 'rejected')
+
+Table: performance_reviews
+- id (INTEGER, primary key)
+- employee_id (INTEGER, foreign key to employees.id)
+- score (FLOAT - usually 1.0 to 5.0)
+- review_date (DATE)
+- comments (VARCHAR)
 
 Examples:
 Question: Show average attendance this month

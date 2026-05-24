@@ -2,7 +2,7 @@
 Recruitment Router — File Upload, AI Parsing, Candidate Management
 """
 import json
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -18,6 +18,7 @@ router = APIRouter(prefix="/api/recruitment", tags=["recruitment"])
 @router.post("/parse", response_model=AIParsedResult)
 async def parse_resume(
     file: UploadFile = File(...),
+    job_description: str = Form(""),
     current_user: User = Depends(require_role("admin", "hr_manager"))
 ):
     """Upload a resume (PDF/DOCX) and get AI parsed data back."""
@@ -36,7 +37,7 @@ async def parse_resume(
             raise ValueError("Could not extract any text from the file.")
             
         logger.info(f"Parsing extracted text with AI (length: {len(raw_text)})")
-        parsed_data = await parse_resume_with_ai(raw_text)
+        parsed_data = await parse_resume_with_ai(raw_text, job_description)
         
         # Merge raw text into result
         parsed_data["raw_text"] = raw_text
@@ -82,3 +83,48 @@ async def list_candidates(
     """List all candidates ordered by match score."""
     candidates = db.query(Candidate).order_by(Candidate.match_score.desc()).all()
     return candidates
+
+@router.get("/candidates/{candidate_id}")
+async def get_candidate(
+    candidate_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin", "hr_manager"))
+):
+    """Get a single candidate with full resume text."""
+    candidate = db.query(Candidate).filter(Candidate.id == candidate_id).first()
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+    
+    skills = []
+    try:
+        skills = json.loads(candidate.skills) if candidate.skills else []
+    except json.JSONDecodeError:
+        skills = []
+    
+    return {
+        "id": candidate.id,
+        "name": candidate.name,
+        "email": candidate.email,
+        "phone": candidate.phone,
+        "skills": skills,
+        "experience_years": candidate.experience_years,
+        "match_score": candidate.match_score,
+        "ai_summary": candidate.ai_summary,
+        "resume_text": candidate.resume_text,
+        "created_at": candidate.created_at.isoformat() if candidate.created_at else None,
+    }
+
+@router.delete("/candidates/{candidate_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_candidate(
+    candidate_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin", "hr_manager"))
+):
+    """Delete a candidate from the database."""
+    candidate = db.query(Candidate).filter(Candidate.id == candidate_id).first()
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+    
+    db.delete(candidate)
+    db.commit()
+    logger.info(f"Candidate deleted: {candidate.name} (ID: {candidate.id})")

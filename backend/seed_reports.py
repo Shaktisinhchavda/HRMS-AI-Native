@@ -9,6 +9,8 @@ from app.database import engine, Base, SessionLocal
 from app.models.employee import Employee
 from app.models.attendance import Attendance
 from app.models.payroll import Payroll
+from app.models.leave import Leave
+from app.models.performance import PerformanceReview
 from app.utils.logger import logger
 
 DEPARTMENTS = ["Engineering", "Marketing", "HR", "Finance"]
@@ -40,6 +42,8 @@ def seed_database():
     db = SessionLocal()
     try:
         logger.info("Clearing old report data...")
+        db.query(Leave).delete()
+        db.query(PerformanceReview).delete()
         db.query(Payroll).delete()
         db.query(Attendance).delete()
         db.query(Employee).delete()
@@ -141,6 +145,46 @@ def seed_database():
                 db.add(payroll)
                 
         db.commit()
+        
+        logger.info("Seeding Leaves and Performance Reviews...")
+        for emp in employees:
+            # Leaves: 0 to 3 leave requests per employee
+            num_leaves = random.randint(0, 3)
+            for _ in range(num_leaves):
+                leave_start = today - timedelta(days=random.randint(10, 300))
+                days = random.randint(1, 5)
+                leave_end = leave_start + timedelta(days=days-1)
+                
+                leave = Leave(
+                    employee_id=emp.id,
+                    start_date=leave_start,
+                    end_date=leave_end,
+                    days=days,
+                    status=random.choices(["approved", "pending", "rejected"], weights=[0.8, 0.1, 0.1])[0]
+                )
+                db.add(leave)
+                
+            # Performance Reviews: 1 or 2 past reviews
+            num_reviews = random.randint(1, 2)
+            for _ in range(num_reviews):
+                review_date = today - timedelta(days=random.randint(30, 365))
+                score = round(random.uniform(2.5, 5.0), 1)
+                
+                if emp.exit_risk == "high":
+                    score = round(random.uniform(1.0, 3.0), 1) # lower scores for high risk
+                elif emp.exit_risk == "low":
+                    score = round(random.uniform(3.5, 5.0), 1)
+                
+                review = PerformanceReview(
+                    employee_id=emp.id,
+                    score=score,
+                    review_date=review_date,
+                    comments="Mocked review from seeding script."
+                )
+                db.add(review)
+                
+        db.commit()
+
         logger.info("Reports seed data generation complete! [OK]")
         
     except Exception as e:

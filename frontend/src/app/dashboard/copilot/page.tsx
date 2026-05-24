@@ -104,8 +104,8 @@ export default function HRCopilotPage() {
               </div>
               <div>
                 <CardTitle className="text-sm font-medium">HR Assistant</CardTitle>
-                <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">
-                  Ollama + ChromaDB
+                <p className="text-xs text-muted-foreground mt-1 flex items-center justify-center gap-1">
+                  Powered by company handbook
                 </p>
               </div>
             </div>
