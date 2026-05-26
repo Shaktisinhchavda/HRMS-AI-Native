@@ -2,40 +2,43 @@ import os
 import time
 import asyncio
 import httpx
+import sqlite3
 from dotenv import load_dotenv
 import json
+import io
+import PyPDF2
 
 # Load environment variables if present
 load_dotenv()
 
-# The HRMS-specific test scenarios
-SCENARIOS = [
-    {
-        "name": "1. Resume Parsing (JSON Extraction)",
-        "prompt": """You are an AI resume parser. Extract the following information into a strict JSON object with keys: "name", "email", "skills" (array of strings). Do not output any markdown or text other than the JSON.
-Resume Text: 'Jane Smith | Senior Backend Engineer | jane.smith@email.com | 8 years of experience. Expert in Python, FastAPI, Postgres, and AWS.'"""
-    },
-    {
-        "name": "2. HR Copilot (Context-Aware RAG)",
-        "prompt": """You are an HR Copilot. Answer the question based ONLY on the context below. If the answer is not in the context, say "I cannot find the answer."
-[User Context]
-Name: Rahul Verma
-Role: Software Engineer
-Leave Balance: 12 days
+def extract_pdf_text(filepath):
+    text = ""
+    try:
+        with open(filepath, "rb") as f:
+            reader = PyPDF2.PdfReader(f)
+            for page in reader.pages:
+                text += page.extract_text() + "\n"
+        return text.strip()
+    except Exception as e:
+        print(f"Error reading PDF: {e}")
+        return "Dummy resume text due to error"
 
-[HR Policy Context]
-Remote work is permitted for 2 days a week for Engineering staff.
-
-Question: Can I work remotely, and how many leave days do I have left?"""
-    },
-    {
-        "name": "3. Natural Language to SQL (Analytics)",
-        "prompt": """You are an AI Data Analyst. Write a valid SQLite query to answer the user's question based on the schema.
-Schema: Table 'employees' (id, full_name, department, salary, performance_score)
-Question: What is the average salary of employees in the Engineering department who have a performance score greater than 4.0?
-Only output the raw SQL query, no explanations."""
-    }
-]
+def get_database_data():
+    conn = sqlite3.connect("hrms.db")
+    
+    # 1. Get an employee for RAG
+    emp = conn.execute("SELECT full_name, department, designation FROM employees LIMIT 1").fetchone()
+    if emp:
+        emp_context = f"Name: {emp[0]}\nRole: {emp[2]}\nDepartment: {emp[1]}\nLeave Balance: 12 days"
+    else:
+        emp_context = "Name: John Doe\nRole: Software Engineer\nDepartment: Engineering\nLeave Balance: 12 days"
+        
+    # 2. Get table schema for NL to SQL
+    schema_rows = conn.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name IN ('employees', 'meetings')").fetchall()
+    schema = "\n".join([row[0] for row in schema_rows])
+    
+    conn.close()
+    return emp_context, schema
 
 async def call_ollama(prompt):
     model = os.getenv("OLLAMA_MODEL", "qwen2.5:1.5b")
@@ -45,7 +48,7 @@ async def call_ollama(prompt):
             res = await client.post(
                 "http://localhost:11434/api/generate", 
                 json={"model": model, "prompt": prompt, "stream": False}, 
-                timeout=30
+                timeout=90
             )
             res.raise_for_status()
             data = res.json()
@@ -62,7 +65,7 @@ async def call_groq(prompt, api_key):
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={"Authorization": f"Bearer {api_key}"},
                 json={"model": model, "messages": [{"role": "user", "content": prompt}]},
-                timeout=30
+                timeout=60
             )
             res.raise_for_status()
             data = res.json()
@@ -79,7 +82,7 @@ async def call_gemini(prompt, api_key):
                 f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}",
                 headers={"Content-Type": "application/json"},
                 json={"contents": [{"parts": [{"text": prompt}]}]},
-                timeout=30
+                timeout=60
             )
             res.raise_for_status()
             data = res.json()
@@ -88,9 +91,9 @@ async def call_gemini(prompt, api_key):
         return None, 0, str(e)
 
 async def run_scenario(scenario, providers):
-    print(f"\n{'-'*60}")
+    print(f"\n{'-'*80}")
     print(f"🎬 SCENARIO: {scenario['name']}")
-    print(f"{'-'*60}")
+    print(f"{'-'*80}")
     
     tasks = []
     if "ollama" in providers:
@@ -112,35 +115,82 @@ async def run_scenario(scenario, providers):
             word_count = len(response.split())
             speed = round(word_count / latency, 2)
             print(f"✅ {provider} ({model_or_error}) | ⏱️ {round(latency, 2)}s | ⚡ {speed} words/sec")
-            print(f"   Output: {response.replace(chr(10), ' ').strip()[:150]}...")
+            preview = response.replace(chr(10), ' ').strip()
+            if len(preview) > 300:
+                preview = preview[:300] + "..."
+            print(f"   Output:\n{preview}")
             print()
 
 async def main():
-    print("="*60)
-    print("🚀 HRMS-Specific LLM Provider Benchmark")
-    print("="*60)
-    print("This tool tests how well each LLM performs on our exact HR app use-cases:")
-    print("1. Resume Parsing (Strict JSON Extraction)\n2. HR Copilot (RAG Accuracy)\n3. NL to SQL (Analytics)\n")
+    print("="*80)
+    print("🚀 HRMS Realistic LLM Provider Benchmark")
+    print("="*80)
+    print("Fetching real data from database and files...\n")
+    
+    # Read real data
+    resume_path = os.path.join("data", "Shaktisinh_Chavda_Resume.pdf")
+    resume_text = extract_pdf_text(resume_path)
+    
+    try:
+        with open(os.path.join("data", "hr_policy.md"), "r") as f:
+            hr_policy = f.read()
+    except Exception:
+        hr_policy = "Remote work is permitted 2 days a week for Engineering staff."
+        
+    emp_context, sql_schema = get_database_data()
+    
+    # Construct Scenarios
+    scenarios = [
+        {
+            "name": "1. Resume Parsing (Strict JSON Extraction)",
+            "prompt": f"""You are an expert HR AI resume parser. Extract the following information into a strict JSON object with keys: 
+"name", "email", "skills" (array of strings), and "experience_years" (integer).
+Do not output any markdown or text other than the JSON.
+
+Resume Text:
+---
+{resume_text[:4000]}
+---"""
+        },
+        {
+            "name": "2. HR Copilot (Context-Aware RAG)",
+            "prompt": f"""You are an HR Copilot. Answer the question based ONLY on the context below. If the answer is not in the context, say "I cannot find the answer."
+
+[User Context]
+{emp_context}
+
+[HR Policy Context]
+{hr_policy[:4000]}
+
+Question: Can I work remotely, and what is my current leave balance?"""
+        },
+        {
+            "name": "3. Natural Language to SQL (Analytics)",
+            "prompt": f"""You are an AI Data Analyst for an HRMS. Write a valid SQLite query to answer the user's question based on the exact schema below.
+Only output the raw SQL query, no markdown blocks or explanations.
+
+Schema:
+{sql_schema}
+
+Question: What is the average salary of employees per department, and how many employees are currently on a Performance Improvement Plan (PIP)?"""
+        }
+    ]
     
     groq_key = os.getenv("GROQ_API_KEY")
-    if not groq_key:
-        groq_key = input("Enter GROQ_API_KEY (or press Enter to skip): ").strip()
-        
     gemini_key = os.getenv("GEMINI_API_KEY")
-    if not gemini_key:
-        gemini_key = input("Enter GEMINI_API_KEY (or press Enter to skip): ").strip()
 
     providers = {"ollama": True}
     if groq_key: providers["groq"] = groq_key
     if gemini_key: providers["gemini"] = gemini_key
 
-    for scenario in SCENARIOS:
+    print(f"Active Providers: {', '.join([k.capitalize() for k in providers.keys()])}\n")
+
+    for scenario in scenarios:
         await run_scenario(scenario, providers)
         
-    print("\n" + "="*60)
+    print("\n" + "="*80)
     print("🏁 BENCHMARK COMPLETE")
-    print("="*60)
-    print("Use these metrics to decide which model is best suited for the HRMS!")
+    print("="*80)
 
 if __name__ == "__main__":
     asyncio.run(main())

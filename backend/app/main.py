@@ -9,9 +9,10 @@ from datetime import datetime
 
 from app.config import settings
 from app.database import engine, Base
-from app.routers import auth, health, recruitment, copilot, reports, analytics, employees, dashboard
+from app.routers import auth, health, recruitment, copilot, reports, analytics, employees, dashboard, meetings
 from app.models.leave import Leave
 from app.models.performance import PerformanceReview
+from app.models.meeting import Meeting
 from app.services.rag import ingest_hr_policy
 from app.utils.logger import logger
 
@@ -85,6 +86,7 @@ app.include_router(copilot.router)
 app.include_router(reports.router)
 app.include_router(analytics.router)
 app.include_router(dashboard.router)
+app.include_router(meetings.router)
 
 @app.get("/")
 async def root():

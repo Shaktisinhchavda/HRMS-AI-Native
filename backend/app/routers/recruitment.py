@@ -4,16 +4,36 @@ Recruitment Router — File Upload, AI Parsing, Candidate Management
 import json
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
 from app.database import get_db
 from app.models.user import User
 from app.models.candidate import Candidate
 from app.schemas.candidate import CandidateCreate, CandidateResponse, AIParsedResult
 from app.services.auth import require_role
-from app.services.ai import extract_text_from_file, parse_resume_with_ai
+from app.services.ai import extract_text_from_file, parse_resume_with_ai, generate_jd_with_ai
 from app.utils.logger import logger
 
 router = APIRouter(prefix="/api/recruitment", tags=["recruitment"])
+
+class JDGenerateRequest(BaseModel):
+    prompt: str
+
+@router.post("/generate-jd")
+async def generate_jd(
+    data: JDGenerateRequest,
+    current_user: User = Depends(require_role("admin", "hr_manager"))
+):
+    """Generate a Job Description using AI."""
+    if not data.prompt.strip():
+        raise HTTPException(status_code=400, detail="Prompt cannot be empty.")
+    
+    try:
+        jd = await generate_jd_with_ai(data.prompt)
+        return {"job_description": jd}
+    except Exception as e:
+        logger.error(f"Error generating JD: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate job description.")
 
 @router.post("/parse", response_model=AIParsedResult)
 async def parse_resume(

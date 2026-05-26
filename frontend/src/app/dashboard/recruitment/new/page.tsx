@@ -7,10 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { 
   UploadCloud, FileText, CheckCircle2, Loader2, Bot, ArrowLeft, 
   Briefcase, GraduationCap, Award, Globe, MapPin, Link2, 
-  ExternalLink, ThumbsUp, ThumbsDown,
+  ExternalLink, ThumbsUp, ThumbsDown, Wand2,
   Sparkles
 } from "lucide-react";
 import Link from "next/link";
@@ -79,10 +80,31 @@ export default function UploadResumePage() {
   const [file, setFile] = useState<File | null>(null);
   const [jobDescription, setJobDescription] = useState("");
   const [showJD, setShowJD] = useState(false);
+  const [showJDGenerator, setShowJDGenerator] = useState(false);
+  const [jdPrompt, setJdPrompt] = useState("");
+  const [isGeneratingJD, setIsGeneratingJD] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [parsedData, setParsedData] = useState<ParsedResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const handleGenerateJD = async () => {
+    if (!jdPrompt.trim()) return;
+    setIsGeneratingJD(true);
+    setError(null);
+    try {
+      const data = await api.post<{ job_description: string }>("/api/recruitment/generate-jd", {
+        prompt: jdPrompt.trim()
+      });
+      setJobDescription(data.job_description);
+      setShowJDGenerator(false);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Failed to generate job description.");
+    } finally {
+      setIsGeneratingJD(false);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -108,8 +130,9 @@ export default function UploadResumePage() {
       const data = await api.postForm<ParsedResult>("/api/recruitment/parse", formData);
       setParsedData(data);
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || "An unexpected error occurred during AI parsing.");
+      console.error("Upload error:", err);
+      const message = err?.detail || err?.message || (typeof err === 'string' ? err : "An unexpected error occurred during AI parsing.");
+      setError(message);
     } finally {
       setIsParsing(false);
     }
@@ -216,7 +239,42 @@ export default function UploadResumePage() {
               </CardTitle>
             </CardHeader>
             {showJD && (
-              <CardContent className="pt-0">
+              <CardContent className="pt-0 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Paste existing or generate new</span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-7 text-xs gap-1.5"
+                    onClick={() => setShowJDGenerator(!showJDGenerator)}
+                  >
+                    <Wand2 className="w-3 h-3" />
+                    AI Generate
+                  </Button>
+                </div>
+                
+                {showJDGenerator && (
+                  <div className="bg-primary/5 p-3 rounded-lg border border-primary/20 space-y-3 animate-fade-in">
+                    <p className="text-xs font-medium">Generate Job Description</p>
+                    <Input 
+                      placeholder="e.g., Senior React Developer with 5 years experience..."
+                      value={jdPrompt}
+                      onChange={(e) => setJdPrompt(e.target.value)}
+                      className="h-8 text-xs bg-background"
+                      disabled={isGeneratingJD}
+                    />
+                    <Button 
+                      size="sm" 
+                      className="w-full h-8 text-xs gap-2"
+                      onClick={handleGenerateJD}
+                      disabled={!jdPrompt.trim() || isGeneratingJD}
+                    >
+                      {isGeneratingJD ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                      {isGeneratingJD ? "Generating..." : "Generate JD"}
+                    </Button>
+                  </div>
+                )}
+
                 <Textarea
                   value={jobDescription}
                   onChange={(e) => setJobDescription(e.target.value)}

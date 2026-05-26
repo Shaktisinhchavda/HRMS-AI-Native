@@ -125,24 +125,23 @@ async def parse_resume_with_ai(resume_text: str, job_description: str = "") -> d
             
             parsed_data = json.loads(raw_response)
             
-            # Normalize and validate fields
-            parsed_data.setdefault("name", "Unknown")
-            parsed_data.setdefault("email", None)
-            parsed_data.setdefault("phone", None)
-            parsed_data.setdefault("location", None)
-            parsed_data.setdefault("linkedin", None)
-            parsed_data.setdefault("portfolio", None)
-            parsed_data.setdefault("current_title", None)
-            parsed_data.setdefault("skills", [])
-            parsed_data.setdefault("experience_years", 0)
-            parsed_data.setdefault("education", [])
-            parsed_data.setdefault("work_experience", [])
-            parsed_data.setdefault("certifications", [])
-            parsed_data.setdefault("languages", [])
-            parsed_data.setdefault("strengths", [])
-            parsed_data.setdefault("weaknesses", [])
-            parsed_data.setdefault("match_score", 50)
-            parsed_data.setdefault("summary", "No summary could be generated.")
+            # Normalize and validate fields (handle both missing keys and None values)
+            parsed_data["name"] = parsed_data.get("name") or "Unknown"
+            parsed_data["email"] = parsed_data.get("email")
+            parsed_data["phone"] = parsed_data.get("phone")
+            parsed_data["location"] = parsed_data.get("location")
+            parsed_data["linkedin"] = parsed_data.get("linkedin")
+            parsed_data["portfolio"] = parsed_data.get("portfolio")
+            parsed_data["current_title"] = parsed_data.get("current_title")
+            parsed_data["skills"] = parsed_data.get("skills") or []
+            parsed_data["experience_years"] = parsed_data.get("experience_years") or 0
+            parsed_data["education"] = parsed_data.get("education") or []
+            parsed_data["work_experience"] = parsed_data.get("work_experience") or []
+            parsed_data["certifications"] = parsed_data.get("certifications") or []
+            parsed_data["languages"] = parsed_data.get("languages") or []
+            parsed_data["strengths"] = parsed_data.get("strengths") or []
+            parsed_data["weaknesses"] = parsed_data.get("weaknesses") or []
+            parsed_data["summary"] = parsed_data.get("summary") or "No summary could be generated."
             
             # Clamp match_score
             score = parsed_data.get("match_score", 50)
@@ -158,3 +157,40 @@ async def parse_resume_with_ai(resume_text: str, job_description: str = "") -> d
     except Exception as e:
         logger.error(f"Error calling Ollama AI: {e}")
         raise ValueError("Failed to parse resume with AI.")
+
+async def generate_jd_with_ai(prompt_text: str) -> str:
+    """Generate a full Job Description from a short prompt."""
+    prompt = f"""
+    You are an expert HR Talent Acquisition Specialist. Write a professional, detailed, and engaging Job Description based on the following requirements:
+    
+    Requirements: {prompt_text}
+    
+    The Job Description should include:
+    1. Job Title
+    2. A brief, engaging overview of the role
+    3. Key Responsibilities (bullet points)
+    4. Required Qualifications & Skills (bullet points)
+    5. Preferred Qualifications (optional, bullet points)
+    
+    Do NOT include placeholder company names like [Company Name], just write it generically or use "our company".
+    Output ONLY the Job Description text. Do not include any meta-commentary like "Here is the job description you requested:".
+    """
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{settings.OLLAMA_BASE_URL}/api/generate",
+                json={
+                    "model": settings.OLLAMA_MODEL,
+                    "prompt": prompt,
+                    "stream": False,
+                },
+                timeout=60.0
+            )
+            response.raise_for_status()
+            result = response.json()
+            
+            return result.get("response", "").strip()
+    except Exception as e:
+        logger.error(f"Error calling Ollama AI for JD generation: {e}")
+        raise ValueError("Failed to generate job description with AI.")

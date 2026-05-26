@@ -1,0 +1,13 @@
+Rahul Verma: Good morning everyone, let's kick off the weekly engineering standup. I'll start — I've been working on the new microservices architecture for the payment module. We're about 70% done with the refactor.
+Employee 9: Thanks Rahul. From the HR side, I wanted to flag that we have two new hires joining next Monday in Engineering. I'll need someone to handle their onboarding buddy assignments.
+Employee 13: I can take that on. I've been through the onboarding flow recently and I know the gaps. Also, I finished the CI/CD pipeline migration to GitHub Actions yesterday — all tests are green now.
+Employee 4: Great updates. On the marketing front, we're preparing the Q3 campaign. I need the product team to share updated screenshots of the new dashboard by Wednesday so we can include them in the launch materials.
+Rahul Verma: Noted. I'll make sure we get clean screenshots from staging by Tuesday EOD.
+Employee 15: Adding to the marketing thread — the SEO audit came back and we need to improve our page load times. Rahul, can the engineering team look into lazy loading for the dashboard components?
+Rahul Verma: Absolutely. I'll create a ticket for that and assign it to Employee 7. Should be a quick win.
+Employee 5: From finance — the Q2 budget review is scheduled for next Thursday. I'll need department heads to submit their expense reports by Wednesday. Also, I noticed we're 12% over budget on cloud infrastructure costs.
+Employee 11: I saw that too. Let's set up a separate call with engineering to review our AWS spending and see where we can optimize. Maybe we can look at reserved instances.
+Employee 9: One more thing — we're rolling out the new performance review cycle starting June 1st. Everyone should have received the updated forms. Please complete self-assessments by June 15th.
+Rahul Verma: Perfect. Let me summarize the action items before we wrap up. Screenshots by Tuesday, expense reports by Wednesday, and self-assessments by June 15th. Great meeting everyone. See you next week.
+Employee 13: Thanks everyone. Good meeting!
+Employee 4: Bye all!

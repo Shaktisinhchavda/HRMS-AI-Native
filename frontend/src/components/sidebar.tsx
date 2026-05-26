@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  Video,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -55,6 +56,12 @@ const navItems: NavItem[] = [
     href: "/dashboard/analytics",
     icon: TrendingUp,
     roles: ["admin", "hr_manager"],
+  },
+  {
+    label: "Meetings",
+    href: "/dashboard/meetings",
+    icon: Video,
+    badge: "AI",
   },
   {
     label: "Settings",

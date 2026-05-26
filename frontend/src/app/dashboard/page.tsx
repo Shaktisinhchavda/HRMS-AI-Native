@@ -102,39 +102,7 @@ function AdminOverview({ data }: { data: AdminData }) {
       {/* Main Content Area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         <div className="lg:col-span-2 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="glass-card">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">On Leave</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-amber-500 mb-2">{data.on_leave_today.length}</div>
-                <div className="space-y-1">
-                  {data.on_leave_today.length === 0 && <div className="text-xs text-muted-foreground">No one on leave</div>}
-                  {data.on_leave_today.slice(0, 3).map((name, i) => (
-                    <div key={i} className="text-xs text-muted-foreground">{name}</div>
-                  ))}
-                  {data.on_leave_today.length > 3 && <div className="text-xs text-muted-foreground italic">+{data.on_leave_today.length - 3} more</div>}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="glass-card border-destructive/20">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold text-destructive">On PIP</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-destructive mb-2">{data.on_pip.length}</div>
-                <div className="space-y-1">
-                  {data.on_pip.length === 0 && <div className="text-xs text-muted-foreground">0 employees</div>}
-                  {data.on_pip.slice(0, 3).map((name, i) => (
-                    <div key={i} className="text-xs text-muted-foreground">{name}</div>
-                  ))}
-                  {data.on_pip.length > 3 && <div className="text-xs text-muted-foreground italic">+{data.on_pip.length - 3} more</div>}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Cards removed */}
 
           <Card className="glass-card">
             <CardHeader>
